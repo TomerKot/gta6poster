@@ -1,0 +1,95 @@
+# Налаштування бота. Усі регулярки — без урахування регістру.
+# Рядки в одинарних лапках ('...') — літерали, зворотний слеш екранувати не треба.
+
+[settings]
+max_posts_per_run = 5        # антиспам: не більше N постів за один запуск
+max_age_hours = 48           # старіше — ігноруємо
+snippet_chars = 280          # довжина уривка (цитуємо коротко, решта — за посиланням)
+seconds_between_posts = 3    # пауза між постами (ліміти Telegram)
+
+[filters]
+# Новина проходить, якщо в заголовку/описі є хоча б один збіг
+# (для джерел з requires_keyword = true, тобто загальних стрічок).
+keywords = [
+  '\bGTA\s?(6|VI)\b',
+  '\bGrand Theft Auto\s?(6|VI)\b',
+  '\bLeonida\b',
+]
+
+# Відсікаємо: піратство, "безкоштовне завантаження", роздачі — типові приманки для malware.
+# Також не постимо "витік" відео/збірок/ассетів (ризик DMCA/блокування каналу).
+block = [
+  '\b(torrent|cracked?|apk|keygen|giveaway)\b',
+  '\bfree (download|key|keys|code|codes)\b',
+  '\bdownload (for )?free\b',
+  '\bbeta (key|access|download)\b',
+  'завантажити (безкоштовно|apk)',
+  '\bleaked (footage|gameplay|video|build|images?|screenshots?|source code)\b',
+]
+
+# Не блокуємо, але позначаємо "⚠️ неперевірена інформація".
+rumor = [
+  '\b(leak(s|ed)?|rumou?rs?|insider|reportedly|allegedly|speculation)\b',
+  '\b(витік|чутки|інсайд)\b',
+]
+
+# ---------------------------------------------------------------------------
+# ДЖЕРЕЛА. official = true -> публікуються першими.
+# requires_keyword = false -> стрічка вже тематична, фільтр за словами не потрібен.
+# Перший запуск у GitHub Actions покаже в логах, які URL не відповіли.
+# ---------------------------------------------------------------------------
+
+[[sources]]
+name = "Google News: GTA 6"
+url = "https://news.google.com/rss/search?q=%22GTA+6%22+OR+%22GTA+VI%22+when:2d&hl=en-US&gl=US&ceid=US:en"
+requires_keyword = false
+
+[[sources]]
+name = "IGN"
+url = "https://feeds.feedburner.com/ign/all"
+
+[[sources]]
+name = "GameSpot"
+url = "https://www.gamespot.com/feeds/news/"
+
+[[sources]]
+name = "PC Gamer"
+url = "https://www.pcgamer.com/rss/"
+
+[[sources]]
+name = "Eurogamer"
+url = "https://www.eurogamer.net/feed"
+
+[[sources]]
+name = "VGC"
+url = "https://www.videogameschronicle.com/feed/"
+
+[[sources]]
+name = "GamesRadar"
+url = "https://www.gamesradar.com/rss/"
+
+# --- Офіційне: YouTube-канал Rockstar Games (RSS безкоштовний, без ключа) ---
+# Знайди channel_id: відкрий канал -> "Поділитися" -> "Копіювати ID каналу",
+# або подивись у вихідному коді сторінки ("channelId"). Потім розкоментуй.
+# [[sources]]
+# name = "Rockstar Games (YouTube)"
+# url = "https://www.youtube.com/feeds/videos.xml?channel_id=ВСТАВ_ID"
+# official = true
+# requires_keyword = true
+
+# --- Bluesky: у кожного профілю є RSS. Додавай журналістів/інсайдерів, яким довіряєш ---
+# [[sources]]
+# name = "Bluesky: handle"
+# url = "https://bsky.app/profile/HANDLE.bsky.social/rss"
+# requires_keyword = true
+
+# --- Reddit: ВИМКНЕНО. З травня 2026 .json дає 403, API потребує ручного схвалення,
+# а RSS з IP датацентрів (GitHub Actions) найімовірніше блокується. Можна спробувати:
+[[sources]]
+name = "Reddit r/GTA6"
+url = "https://www.reddit.com/r/GTA6/top/.rss?t=day"
+enabled = false
+requires_keyword = false
+
+# --- X/Twitter: свідомо НЕ додано. Безкоштовного читання API немає (2026),
+# "Nitter"/скрапери порушують ToS і постійно ламаються. Див. docs/ANALYSIS.md.

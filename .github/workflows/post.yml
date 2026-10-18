@@ -1,0 +1,49 @@
+name: post-news
+
+on:
+  schedule:
+    - cron: "17,47 * * * *"      # двічі на годину; не на :00, там черги GitHub
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Лише показати в лозі, нічого не публікувати"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gta6-post
+  cancel-in-progress: false
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write            # потрібно лише для коміту state/seen.json
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install
+        run: pip install -r requirements.txt
+      - name: Run bot
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          DRY_RUN: ${{ (github.event_name == 'workflow_dispatch' && inputs.dry_run) && '1' || '0' }}
+          PYTHONPATH: src
+        run: python -m gta6bot.main
+      - name: Commit state
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add state/seen.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "chore: update state"
+          git push
